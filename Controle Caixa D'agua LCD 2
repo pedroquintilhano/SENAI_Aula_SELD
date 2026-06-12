@@ -1,0 +1,50 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Endereço padrão do LCD I2C (0x27 ou 0x3F)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Definição dos pinos
+#define SENSOR_BAIXO 2
+#define SENSOR_ALTO  3
+#define LED_VERMELHO 4
+#define LED_VERDE    5
+
+
+
+void setup() {
+  pinMode(SENSOR_BAIXO, INPUT_PULLUP);
+  pinMode(SENSOR_ALTO, INPUT_PULLUP);
+  pinMode(LED_VERMELHO, OUTPUT);
+  pinMode(LED_VERDE, OUTPUT);
+
+  lcd.init();
+  lcd.backlight();
+}
+    
+
+void loop() {
+  
+  bool nivelBaixo = !digitalRead(SENSOR_BAIXO);
+  bool nivelAlto  = !digitalRead(SENSOR_ALTO);
+
+  // Acionamento da bomba
+  //digitalWrite(BOMBA, estadoBomba);
+
+  // LEDs indicadores
+  digitalWrite(LED_VERMELHO, nivelBaixo);
+  digitalWrite(LED_VERDE, nivelAlto);
+
+  // Atualização do LCD
+  
+  lcd.setCursor(0, 1);
+  if (nivelAlto) {
+    lcd.print("Nivel: ALTO     ");
+  } else if (nivelBaixo) {
+    lcd.print("Nivel: BAIXO    ");
+  } else {
+    lcd.print("Nivel: MEDIO    ");
+  }
+
+  delay(500);
+}
