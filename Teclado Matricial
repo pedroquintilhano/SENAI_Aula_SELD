@@ -1,0 +1,196 @@
+#include <Keypad.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// ==========================
+// LCD I2C
+// ==========================
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// ==========================
+// Configuração do teclado 4x3
+// ==========================
+const byte LINHAS = 4;
+const byte COLUNAS = 3;
+
+char teclas[LINHAS][COLUNAS] = {
+  {'1','2','3'},
+  {'4','5','6'},
+  {'7','8','9'},
+  {'*','0','#'}
+};
+
+// Pinos do teclado
+byte pinosLinhas[LINHAS] = {9, 8, 7, 6};
+byte pinosColunas[COLUNAS] = {5, 4, 3};
+
+Keypad teclado = Keypad(
+  makeKeymap(teclas),
+  pinosLinhas,
+  pinosColunas,
+  LINHAS,
+  COLUNAS
+);
+
+// ==========================
+// Pinos
+// ==========================
+const int ledPin = 13;
+const int botaoPin = 12;
+
+// ==========================
+// Senha
+// ==========================
+String senhaCorreta = "4321";
+String senhaDigitada = "";
+
+bool sistemaLiberado = false;
+bool estadoLed = false;
+
+// Variável para detectar mudança do botão
+bool ultimoEstadoBotao = HIGH;
+
+void setup() {
+
+  pinMode(ledPin, OUTPUT);
+
+  // Pull-up interno
+  pinMode(botaoPin, INPUT_PULLUP);
+
+  digitalWrite(ledPin, LOW);
+
+  Serial.begin(9600);
+
+  // Inicializa LCD
+  lcd.init();
+  lcd.backlight();
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("  Digite Senha");
+  lcd.setCursor(6, 1);
+  lcd.print("----");
+}
+
+void loop() {
+
+  // ==========================
+  // Leitura teclado
+  // ==========================
+  char tecla = teclado.getKey();
+
+  if (tecla) {
+
+    // Confirmar senha
+    if (tecla == '#') {
+
+      lcd.clear();
+
+      if (senhaDigitada == senhaCorreta) {
+
+        sistemaLiberado = true;
+
+        lcd.setCursor(0, 0);
+        lcd.print(" Senha Correta");
+
+        lcd.setCursor(0, 1);
+        lcd.print(" Sistema Livre");
+
+        delay(2000);
+
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("  Aperte Botao");
+      }
+
+      else {
+
+        sistemaLiberado = false;
+
+        lcd.setCursor(0, 0);
+        lcd.print("Senha Errada");
+
+        lcd.setCursor(0, 1);
+        lcd.print("Tente Novamente");
+
+        delay(2000);
+
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("  Digite Senha");
+        lcd.setCursor(0, 1);
+        lcd.print("      ----");
+      }
+
+      senhaDigitada = "";
+    }
+
+    // Limpar senha
+    else if (tecla == '*') {
+
+      senhaDigitada = "";
+
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Senha Limpa");
+
+      delay(1000);
+
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("  Digite Senha");
+      lcd.setCursor(0, 1);
+      lcd.print("     ----");
+    }
+
+    // Digitação normal
+    else {
+
+      senhaDigitada += tecla;
+
+      // Mostra * no LCD
+      lcd.setCursor(0, 1);
+
+      for (int i = 0; i < senhaDigitada.length(); i++) {
+        lcd.print("*");
+      }
+    }
+  }
+
+  // ==========================
+  // Controle do LED (TOGGLE)
+  // ==========================
+  if (sistemaLiberado) {
+
+    bool estadoBotao = digitalRead(botaoPin);
+
+    // Detecta quando botão é apertado
+    if (ultimoEstadoBotao == HIGH && estadoBotao == LOW) {
+
+      // Inverte estado do LED
+      estadoLed = !estadoLed;
+
+      digitalWrite(ledPin, estadoLed);
+
+      // Atualiza LCD
+      lcd.setCursor(0, 1);
+
+      if (estadoLed) {
+        lcd.print("ENTRADA LIBERADA     ");
+      } 
+      else {
+        lcd.print("ENTRADA BLOQUEADA  ");
+      }
+
+      delay(200); // debounce simples
+    }
+
+    ultimoEstadoBotao = estadoBotao;
+  }
+
+  else {
+
+    digitalWrite(ledPin, LOW);
+    estadoLed = false;
+  }
+}
