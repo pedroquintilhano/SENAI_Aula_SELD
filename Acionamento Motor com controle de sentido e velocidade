@@ -1,0 +1,104 @@
+/* ==========================
+   PINAGEM MOTOR A - L298N
+   ========================== */
+
+int IN1 = 5;
+int IN2 = 6;
+int velocidadeA = 10;
+
+// Variável auxiliar PWM
+int velocidade = 0;
+
+
+/* ==========================
+   CONFIGURAÇÃO INICIAL
+   ========================== */
+void setup() {
+
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(velocidadeA, OUTPUT);
+
+}
+
+
+/* ==========================
+   LOOP PRINCIPAL
+   ========================== */
+void loop() {
+
+  // ==========================
+  // MOTOR GIRANDO - SENTIDO HORÁRIO
+  // ==========================
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  // Velocidade alta
+  analogWrite(velocidadeA, 230);
+  delay(3000);
+
+  // Velocidade intermediária
+  analogWrite(velocidadeA, 150);
+  delay(3000);
+
+  // Velocidade baixa
+  analogWrite(velocidadeA, 80);
+  delay(3000);
+
+
+  // ==========================
+  // RAMPA DE ACELERAÇÃO
+  // ==========================
+  while (velocidade < 255) {
+
+    analogWrite(velocidadeA, velocidade);
+
+    velocidade = velocidade + 10;
+
+    delay(50);
+  }
+
+
+  // ==========================
+  // RAMPA DE DESACELERAÇÃO
+  // ==========================
+  while (velocidade > 0) {
+
+    analogWrite(velocidadeA, velocidade);
+
+    velocidade = velocidade - 10;
+
+    delay(50);
+  }
+
+
+  // ==========================
+  // PARA O MOTOR
+  // ==========================
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+
+  analogWrite(velocidadeA, 0);
+
+  delay(2000);
+
+
+  // ==========================
+  // INVERSÃO DE SENTIDO
+  // ==========================
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+
+  analogWrite(velocidadeA, 180);
+
+  delay(3000);
+
+
+  // Para novamente
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+
+  analogWrite(velocidadeA, 0);
+
+  delay(2000);
+}
