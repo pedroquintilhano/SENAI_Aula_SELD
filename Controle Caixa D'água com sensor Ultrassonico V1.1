@@ -1,0 +1,119 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// LCD I2C
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Pinos
+#define TRIG 2
+#define ECHO 3
+#define LED_VERMELHO 4
+#define LED_VERDE 5
+#define BOMBA 6
+
+
+
+bool estadoBomba = false;
+
+// Altura máxima da caixa (em cm)
+float alturaCaixa = 30.0; // ALTERE PARA SUA CAIXA
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+
+  pinMode(LED_VERMELHO, OUTPUT);
+  pinMode(LED_VERDE, OUTPUT);
+  pinMode(BOMBA, OUTPUT);
+
+  digitalWrite(BOMBA, LOW);
+
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0,0);
+  lcd.print("Controle Nivel");
+  lcd.setCursor(0,1);
+  lcd.print("Caixa d'Agua");
+  delay(2000);
+  lcd.clear();
+
+
+}
+
+void loop() {
+
+  // Disparo do ultrassônico
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  // Tempo do eco
+  long duracao = pulseIn(ECHO, HIGH);
+
+  // Distância até água (cm)
+  float distancia = duracao * 0.034 / 2;
+
+  // Nível de água (cm)
+  float nivel = alturaCaixa - distancia;
+
+  // Converte para %
+  int porcentagem = (nivel / alturaCaixa) * 100;
+
+  // Limita entre 0 e 100%
+  porcentagem = constrain(porcentagem, 0, 100);
+
+  // Lógica da bomba
+  if (porcentagem <= 30) {
+    estadoBomba = true;
+  }
+
+  if (porcentagem >= 80) {
+    estadoBomba = false;
+  }
+
+  // Aciona bomba
+  digitalWrite(BOMBA, estadoBomba);
+
+  // LEDs
+  digitalWrite(LED_VERMELHO, porcentagem <= 30);
+  digitalWrite(LED_VERDE, porcentagem >= 80);
+
+  // LCD
+  lcd.setCursor(0,0);
+  lcd.print("Nivel:");
+  lcd.print(porcentagem);
+  lcd.print("%   ");
+
+  lcd.setCursor(0,1);
+  lcd.print("Bomba:");
+  lcd.print(estadoBomba ? "ON " : "OFF");
+// ===== MONITOR SERIAL =====
+  //Serial.println("Distancia: ");
+  //Serial.println(LED_VERDE);
+  int estado = digitalRead(LED_VERDE); // Lê se está HIGH (ligado) ou LOW (desligado)
+  
+  if (estado == HIGH) {
+    Serial.println("Saida LIGADA (HIGH)");
+    Serial.print("Distancia");
+    Serial.println(distancia);
+    Serial.print("Porcentagem");
+    Serial.println(porcentagem);
+    
+  } else {
+    Serial.println("Saida DESLIGADA (LOW)");
+    Serial.print("Distancia");
+    Serial.println(distancia);
+    Serial.print("Porcentagem");
+    Serial.println(porcentagem);
+  }
+  
+
+  delay(500);
+
+
+}
